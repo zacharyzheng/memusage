@@ -3,8 +3,8 @@
 #include "memusage.h"
 
 node_t *hash_table[MAX_LEN] = { NULL };
-unsigned long mem_size = 0;
-
+static unsigned long mem_size = 0;
+static unsigned long max_mem_size = 0;
 //void *malloc(size_t size)
 void *m_malloc(unsigned int size)
 {
@@ -35,6 +35,10 @@ void *m_malloc(unsigned int size)
         cur->pre = insert;
     }
     mem_size += size;
+    if (mem_size > max_mem_size) {
+        max_mem_size = mem_size;
+    }
+    printf("[%s] size is %d bytes, mem_size is %ld bytes, max_mem_size is %ld bytes\n", __func__, size, mem_size, max_mem_size);
 
 END:
     return p;
@@ -55,10 +59,14 @@ void m_free(void* p)
             mem_size = mem_size - t->size;
             if (t->pre != NULL)
                 t->pre->next = t->next;
+            else
+                hash_table[((unsigned long)p >> 4)&HASH_MASK] = t->next;
+
             if (t->next != NULL)
                 t->next->pre = t->pre;
             free(t);
         }
+        printf("[%s] mem_size is %ld bytes, max_mem_size is %ld bytes\n", __func__, mem_size, max_mem_size);
     }
     free(p);
 }
@@ -66,5 +74,17 @@ void m_free(void* p)
 
 void m_info()
 {
-    printf("cur memusege bytes is %ld\n", mem_size);
+    printf("mem_size is %ld bytes, max_mem_size is %ld bytes\n", mem_size, max_mem_size);
+}
+
+
+unsigned long get_mem_size()
+{
+    return mem_size;
+}
+
+
+unsigned long get_max_mem_size()
+{
+    return max_mem_size;
 }
